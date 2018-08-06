@@ -36,9 +36,9 @@ keep_prob = tf.placeholder(tf.float32)
 # ==========================================    2.函数声明    ==========================================
 # 获得测试图像的名称和数据流
 def get_name_and_image():
-    all_image = os.listdir(TRAIN_PATH)
-    random_file = random.randint(0, 3429)
-    image_file_path = os.path.join(TRAIN_PATH, all_image[random_file])
+    all_image = os.listdir(TEST_PATH)   ################################
+    random_file = random.randint(0, 9)   ################################
+    image_file_path = os.path.join(TEST_PATH, all_image[random_file])   ################################
     base = os.path.basename(image_file_path)
     name = os.path.splitext(base)[0]
     image = Image.open(image_file_path)
@@ -114,8 +114,8 @@ def inference():
     x = tf.reshape(X, shape=[-1, IMAGE_HEIGHT, IMAGE_WIDTH, 1])  # 尺寸：114 * 450
     w_conv1 = weight_variable([5, 5, 1, 32])
     b_conv1 = bias_variable([32])
-    cout_conv1 = tf.nn.relu(conv2d(x, w_conv1) + b_conv1)  # 尺寸：114 * 450 /3  = 38 * 150
-    pout_pool1 = max_pool_2x2(cout_conv1)   # 尺寸：38 * 150 /2  = 19 * 75
+    cout_conv1 = tf.nn.relu(conv2d(x, w_conv1) + b_conv1)
+    pout_pool1 = max_pool_2x2(cout_conv1)
     print(cout_conv1)
     print(pout_pool1)
     # dout_dropout1 = tf.nn.dropout(pout_pool1, keep_prob)
@@ -124,8 +124,8 @@ def inference():
     print('######### 2 ###########')
     w_conv2 = weight_variable([5, 5, 32, 64])
     b_conv2 = bias_variable([64])
-    cout_conv2 = tf.nn.relu(conv2d(pout_pool1, w_conv2) + b_conv2)  # 尺寸：19 * 75 /3  = 13 * 25
-    pout_pool2 = max_pool_2x2(cout_conv2)     # 尺寸：13 * 25 /2  = 7 * 13
+    cout_conv2 = tf.nn.relu(conv2d(pout_pool1, w_conv2) + b_conv2)
+    pout_pool2 = max_pool_2x2(cout_conv2)
     print(cout_conv2)
     print(pout_pool2)
     # dout_dropout2 = tf.nn.dropout(pout_pool2, keep_prob)
@@ -134,7 +134,7 @@ def inference():
     print('######### 3 ###########')
     w_conv3 = weight_variable([5, 5, 64, 128])
     b_conv3 = bias_variable([128])
-    cout_conv3 = tf.nn.relu(conv2d(pout_pool2, w_conv3) + b_conv3)    # 尺寸：7 * 13 /3  = 3 * 5
+    cout_conv3 = tf.nn.relu(conv2d(pout_pool2, w_conv3) + b_conv3)
     pout_pool3 = max_pool_2x2(cout_conv3)
     print(cout_conv3)
     print(pout_pool3)
@@ -157,7 +157,8 @@ def inference():
     w_fc2 = weight_variable([1024, MAX_CAPTCHA * CHAR_SET_LEN])
     b_fc2 = bias_variable([MAX_CAPTCHA * CHAR_SET_LEN])
     # 最后的分类，结果为1*1*10 softmax和sigmoid都是基于logistic分类算法，一个是多分类一个是二分类
-    y_out = tf.nn.softmax(tf.matmul(out_fc1_drop, w_fc2) + b_fc2)
+    # y_out = tf.nn.softmax(tf.matmul(out_fc1_drop, w_fc2) + b_fc2)
+    y_out = tf.add(tf.matmul(out_fc1_drop, w_fc2), b_fc2)
 
     return y_out
 
@@ -166,7 +167,7 @@ def train_crack_captcha_cnn(learn_ratio=0.001):
     # 获得前向传播结果
     y_out = inference()
     # 定义loss(最小误差概率)，选定优化优化loss，
-    loss = -tf.reduce_sum(Y * tf.log(y_out))  # 定义交叉熵为loss函数
+    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_out, labels=Y))
     optimizer = tf.train.AdamOptimizer(learn_ratio).minimize(loss)  # 调用优化器优化，其实就是通过喂数据争取cross_entropy最小化
 
     # 计算出准确率
@@ -179,6 +180,8 @@ def train_crack_captcha_cnn(learn_ratio=0.001):
     saver = tf.train.Saver()
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
+        # 恢复之前数据
+        saver.restore(sess, tf.train.latest_checkpoint('.'))
 
         step = 0
         while True:
@@ -192,12 +195,33 @@ def train_crack_captcha_cnn(learn_ratio=0.001):
                 acc = sess.run(accuracy, feed_dict={X: batch_x_test, Y: batch_y_test, keep_prob: 1.})
                 print('当前阶段为：%s，准确率为：%s' % (step, acc))
                 # 如果准确率大于50%,保存模型,完成训练
-                if acc > 0.50:
+                if acc > 0.99:
                     saver.save(sess, "./crack_capcha.model", global_step=step)
                     break
 
             step += 1
 
 
+
+def crack_captcha():
+    # CNN最终输出的特征向量
+    output = inference()
+
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        saver.restore(sess, tf.train.latest_checkpoint('.'))
+        n = 1
+        while n <= 10:
+            text, image = get_name_and_image()
+            image = 1 * (image.flatten())
+            predict = tf.argmax(tf.reshape(output, [-1, MAX_CAPTCHA, CHAR_SET_LEN]), 2)
+            text_list = sess.run(predict, feed_dict={X: [image], keep_prob: 1})
+            vec = text_list[0].tolist()
+            predict_text = vec2name(vec)
+            print("正确: {}  预测: {}".format(text, predict_text))
+            n += 1
+
+
 if __name__ == '__main__':
-    train_crack_captcha_cnn()
+    # train_crack_captcha_cnn()
+    crack_captcha()
