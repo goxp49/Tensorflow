@@ -83,8 +83,8 @@ def bias_variable(shape):
 # W：权重
 # strides：第一和第四维固定为1，第二和第三维表示卷积核尺寸
 def conv2d(x, W):
-    # 卷积遍历各方向步数为3，SAME：边缘外自动补0，遍历相乘
-    return tf.nn.conv2d(x, W, strides=[1, 3, 3, 1], padding='SAME')
+    # 卷积遍历各方向步数为1，SAME：边缘外自动补0，遍历相乘
+    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
 
 # 池化层算法
@@ -110,39 +110,50 @@ def get_next_batch(batch_size=64):
 def inference():
     ### 第一层卷积操作 ###
     # 将一维图片数据流转换为二维矩阵，第一个参数表示不限订batch数量，最后一个1表示输入层深度
+    print('######### 1 ###########')
     x = tf.reshape(X, shape=[-1, IMAGE_HEIGHT, IMAGE_WIDTH, 1])  # 尺寸：114 * 450
     w_conv1 = weight_variable([5, 5, 1, 32])
     b_conv1 = bias_variable([32])
     cout_conv1 = tf.nn.relu(conv2d(x, w_conv1) + b_conv1)  # 尺寸：114 * 450 /3  = 38 * 150
-    pout_pool1 = max_pool_2x2(cout_conv1)
+    pout_pool1 = max_pool_2x2(cout_conv1)   # 尺寸：38 * 150 /2  = 19 * 75
+    print(cout_conv1)
+    print(pout_pool1)
     # dout_dropout1 = tf.nn.dropout(pout_pool1, keep_prob)
 
     ### 第二层卷积操作 ###
+    print('######### 2 ###########')
     w_conv2 = weight_variable([5, 5, 32, 64])
     b_conv2 = bias_variable([64])
-    cout_conv2 = tf.nn.relu(conv2d(pout_pool1, w_conv2) + b_conv2)
-    pout_pool2 = max_pool_2x2(cout_conv2)
+    cout_conv2 = tf.nn.relu(conv2d(pout_pool1, w_conv2) + b_conv2)  # 尺寸：19 * 75 /3  = 13 * 25
+    pout_pool2 = max_pool_2x2(cout_conv2)     # 尺寸：13 * 25 /2  = 7 * 13
+    print(cout_conv2)
+    print(pout_pool2)
     # dout_dropout2 = tf.nn.dropout(pout_pool2, keep_prob)
 
     ### 第三层卷积操作 ###
+    print('######### 3 ###########')
     w_conv3 = weight_variable([5, 5, 64, 128])
     b_conv3 = bias_variable([128])
-    cout_conv3 = tf.nn.relu(conv2d(pout_pool2, w_conv3) + b_conv3)
+    cout_conv3 = tf.nn.relu(conv2d(pout_pool2, w_conv3) + b_conv3)    # 尺寸：7 * 13 /3  = 3 * 5
     pout_pool3 = max_pool_2x2(cout_conv3)
+    print(cout_conv3)
+    print(pout_pool3)
     # dout_dropout3 = tf.nn.dropout(pout_pool3, keep_prob)
 
     ### 第四层全连接操作 ###
-    w_fc1 = weight_variable([8 * 24 * 128, 1024])
+    print('######### 4 ###########')
+    w_fc1 = weight_variable([15 * 57 * 128, 1024])
     # 1024个偏执数据
     b_fc1 = bias_variable([1024])
     # 将第三层卷积池化结果reshape成只有一行15*57*128个数据# [n_samples, 8, 24, 128] ->> [n_samples, 8*24*128]
-    h_pool4_flat = tf.reshape(pout_pool3, [-1, 8 * 24 * 128])
+    h_pool4_flat = tf.reshape(pout_pool3, [-1, 15 * 57 * 128])
     # 卷积操作，结果是1*1*1024，单行乘以单列等于1*1矩阵，matmul实现最基本的矩阵相乘，不同于tf.nn.conv2d的遍历相乘，自动认为是前行向量后列向量
     out_fc1 = tf.nn.relu(tf.matmul(h_pool4_flat, w_fc1) + b_fc1)
     # 通过dropout层减少过拟合
     out_fc1_drop = tf.nn.dropout(out_fc1, keep_prob)
 
     ## 第五层输出操作 ##
+    print('######### 5 ###########')
     w_fc2 = weight_variable([1024, MAX_CAPTCHA * CHAR_SET_LEN])
     b_fc2 = bias_variable([MAX_CAPTCHA * CHAR_SET_LEN])
     # 最后的分类，结果为1*1*10 softmax和sigmoid都是基于logistic分类算法，一个是多分类一个是二分类
