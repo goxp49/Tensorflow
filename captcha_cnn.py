@@ -118,27 +118,27 @@ def inference():
     pout_pool1 = max_pool_2x2(cout_conv1)
     print(cout_conv1)
     print(pout_pool1)
-    # dout_dropout1 = tf.nn.dropout(pout_pool1, keep_prob)
+    dout_dropout1 = tf.nn.dropout(pout_pool1, keep_prob)
 
     ### 第二层卷积操作 ###
     print('######### 2 ###########')
     w_conv2 = weight_variable([5, 5, 32, 64])
     b_conv2 = bias_variable([64])
-    cout_conv2 = tf.nn.relu(conv2d(pout_pool1, w_conv2) + b_conv2)
+    cout_conv2 = tf.nn.relu(conv2d(dout_dropout1, w_conv2) + b_conv2)
     pout_pool2 = max_pool_2x2(cout_conv2)
     print(cout_conv2)
     print(pout_pool2)
-    # dout_dropout2 = tf.nn.dropout(pout_pool2, keep_prob)
+    dout_dropout2 = tf.nn.dropout(pout_pool2, keep_prob)
 
     ### 第三层卷积操作 ###
     print('######### 3 ###########')
     w_conv3 = weight_variable([5, 5, 64, 128])
     b_conv3 = bias_variable([128])
-    cout_conv3 = tf.nn.relu(conv2d(pout_pool2, w_conv3) + b_conv3)
+    cout_conv3 = tf.nn.relu(conv2d(dout_dropout2, w_conv3) + b_conv3)
     pout_pool3 = max_pool_2x2(cout_conv3)
     print(cout_conv3)
     print(pout_pool3)
-    # dout_dropout3 = tf.nn.dropout(pout_pool3, keep_prob)
+    dout_dropout3 = tf.nn.dropout(pout_pool3, keep_prob)
 
     ### 第四层全连接操作 ###
     print('######### 4 ###########')
@@ -146,7 +146,7 @@ def inference():
     # 1024个偏执数据
     b_fc1 = bias_variable([1024])
     # 将第三层卷积池化结果reshape成只有一行15*57*128个数据# [n_samples, 8, 24, 128] ->> [n_samples, 8*24*128]
-    h_pool4_flat = tf.reshape(pout_pool3, [-1, 15 * 57 * 128])
+    h_pool4_flat = tf.reshape(dout_dropout3, [-1, 15 * 57 * 128])
     # 卷积操作，结果是1*1*1024，单行乘以单列等于1*1矩阵，matmul实现最基本的矩阵相乘，不同于tf.nn.conv2d的遍历相乘，自动认为是前行向量后列向量
     out_fc1 = tf.nn.relu(tf.matmul(h_pool4_flat, w_fc1) + b_fc1)
     # 通过dropout层减少过拟合
