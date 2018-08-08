@@ -64,7 +64,7 @@ def train_mnist():
         # 恢复之前数据
         try:
             saver.restore(sess, tf.train.latest_checkpoint('.'))
-        except:
+        except ValueError:
             print('不存在已训练数据，重新开始！')
 
         for step in range(10000):
