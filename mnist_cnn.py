@@ -58,26 +58,17 @@ def train_mnist():
     # 初始化所有变量
     init = tf.global_variables_initializer()
 
-    saver = tf.train.Saver()
     with tf.Session() as sess:
         sess.run(init)
-        # 恢复之前数据
-        try:
-            saver.restore(sess, tf.train.latest_checkpoint('.'))
-        except ValueError:
-            print('不存在已训练数据，重新开始！')
-
         for step in range(10000):
             batch = mnist.train.next_batch(50)
             _, train_loss = sess.run([optimizer, loss], feed_dict={X: batch[0], Y_: batch[1], keep_prob: 0.5})
             print(step, train_loss)
             if step % 100 == 0:
                 train_accuracy = sess.run(accuracy, feed_dict={X: batch[0], Y_: batch[1], keep_prob: 1.0})
-                print('step %d,准确率为：%g' % (step, train_accuracy))
-        # 训练完之后存储
-        saver.save(sess, "./crack_capcha.model", global_step=10000)
+                print('step %d,准确率为：%g ！！！！！！！！！！！！！！！！！！！！！' % (step, train_accuracy))
         total_accuracy = sess.run(accuracy, feed_dict={X: mnist.test.images, Y_: mnist.test.labels, keep_prob: 1.0})
-        print('test_accuracy  %s!!!!!!!' % (total_accuracy))
+        print('测试准确率为：%s ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！' % (total_accuracy))
 
 
 if __name__ == '__main__':
