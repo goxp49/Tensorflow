@@ -101,6 +101,7 @@ def inference():
     net = slim.conv2d(net, 128, [3, 3])
     net = slim.conv2d(net, 128, [3, 3])
     net = slim.max_pool2d(net, [2, 2])  # shape of net is [N,15,57,128]
+    net = tf.nn.dropout(net, keep_prob)
 
     ### 第四层全连接操作 ###
     print('######### 4 ###########')
