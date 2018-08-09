@@ -11,8 +11,15 @@ https://blog.csdn.net/qq_14845119/article/details/73648100
 4.CNN那么多的网络有什么区别吗？如何对CNN网络进行修改？ - 知乎
 https://www.zhihu.com/question/53727257/answer/136261195
 
+CNN网络架构演进：从LeNet到DenseNet:
+https://www.cnblogs.com/skyfsm/p/8451834.html
+
 4.如何选择优化器 optimizer：
 https://www.jianshu.com/p/d99b83f4c1a6
 
 5.知乎——GAN相关介绍：
 https://zhuanlan.zhihu.com/zhaoyeyu
+
+机器学习-浅谈CapsulesNet胶囊网络：
+https://www.jianshu.com/p/cd4b5163929e
+https://blog.csdn.net/uwr44uouqcnsuqb60zk2/article/details/78463687
