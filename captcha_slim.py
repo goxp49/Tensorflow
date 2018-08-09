@@ -36,12 +36,12 @@ keep_prob = tf.placeholder(tf.float32)
 # ==========================================    2.函数声明    ==========================================
 # 获得测试图像的名称和数据流
 def get_name_and_image():
-    all_image = os.listdir(TRAIN_PATH)
-    # all_image = os.listdir(TEST_PATH)
-    random_file = random.randint(0, 3429)
-    # random_file = random.randint(0, 9)
-    image_file_path = os.path.join(TRAIN_PATH, all_image[random_file])
-    # image_file_path = os.path.join(TEST_PATH, all_image[random_file])
+    # all_image = os.listdir(TRAIN_PATH)
+    all_image = os.listdir(TEST_PATH)
+    # random_file = random.randint(0, 3429)
+    random_file = random.randint(0, 9)
+    # image_file_path = os.path.join(TRAIN_PATH, all_image[random_file])
+    image_file_path = os.path.join(TEST_PATH, all_image[random_file])
     base = os.path.basename(image_file_path)
     name = os.path.splitext(base)[0]
     image = Image.open(image_file_path)
@@ -89,12 +89,16 @@ def inference():
     net = slim.conv2d(x_image, 16, [3, 3])  # shape of net is [N,114,450,32]
     net = slim.conv2d(net, 16, [3, 3])  # shape of net is [N,114,450,32]
     net = slim.max_pool2d(net, [2, 2])  # shape of net is [N,57,225,32]
+    net = tf.nn.dropout(net, keep_prob)
+
 
     ### 第二层卷积操作 ###
     print('######### 2 ###########')
     net = slim.conv2d(net, 32, [3, 3])
     net = slim.conv2d(net, 32, [3, 3])
     net = slim.max_pool2d(net, [2, 2])  # shape of net is [N,29,113,64]
+    net = tf.nn.dropout(net, keep_prob)
+
 
     ### 第三层卷积操作 ###
     print('######### 3 ###########')
@@ -111,7 +115,8 @@ def inference():
 
     ## 第五层输出操作 ##
     print('######### 5 ###########')
-    net = slim.fully_connected(net, MAX_CAPTCHA * CHAR_SET_LEN, scope='fc2')
+    # 这里一定要设置输出层的激活函数为None！！！否则会导致梯度消失或爆炸
+    net = slim.fully_connected(net, MAX_CAPTCHA * CHAR_SET_LEN, activation_fn=None, scope='fc2')
     return net
 
 
@@ -177,5 +182,5 @@ def crack_captcha():
 
 
 if __name__ == '__main__':
-    train_crack_captcha_cnn()
-    # crack_captcha()
+    # train_crack_captcha_cnn()
+    crack_captcha()
