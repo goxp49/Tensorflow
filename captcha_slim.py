@@ -86,25 +86,25 @@ def inference():
     # 将一维图片数据流转换为二维矩阵，第一个参数表示不限订batch数量，最后一个1表示输入层深度
     print('######### 1 ###########')
     x_image = tf.reshape(X, shape=[-1, IMAGE_HEIGHT, IMAGE_WIDTH, 1])  # 尺寸：114 * 450
-    net = slim.conv2d(x_image, 32, [3, 3])  # shape of net is [N,114,450,32]
-    net = slim.conv2d(net, 32, [3, 3])  # shape of net is [N,114,450,32]
+    net = slim.conv2d(x_image, 16, [3, 3])  # shape of net is [N,114,450,32]
+    net = slim.conv2d(net, 16, [3, 3])  # shape of net is [N,114,450,32]
     net = slim.max_pool2d(net, [2, 2])  # shape of net is [N,57,225,32]
 
     ### 第二层卷积操作 ###
     print('######### 2 ###########')
-    net = slim.conv2d(net, 64, [3, 3])
-    net = slim.conv2d(net, 64, [3, 3])
+    net = slim.conv2d(net, 32, [3, 3])
+    net = slim.conv2d(net, 32, [3, 3])
     net = slim.max_pool2d(net, [2, 2])  # shape of net is [N,29,113,64]
 
     ### 第三层卷积操作 ###
     print('######### 3 ###########')
-    net = slim.conv2d(net, 128, [3, 3])
-    net = slim.conv2d(net, 128, [3, 3])
+    net = slim.conv2d(net, 64, [3, 3])
+    net = slim.conv2d(net, 64, [3, 3])
     net = slim.max_pool2d(net, [2, 2])  # shape of net is [N,15,57,128]
 
     ### 第四层全连接操作 ###
     print('######### 4 ###########')
-    net = tf.reshape(net, [-1, 14 * 56 * 128])
+    net = tf.reshape(net, [-1, 14 * 56 * 64])
     net = slim.fully_connected(net, 1024, scope='fc1')  # shape of net is [N,1024],1024为自定义输出节点数量
     net = tf.nn.dropout(net, keep_prob)
 
@@ -114,7 +114,7 @@ def inference():
     return net
 
 
-def train_crack_captcha_cnn(learn_ratio=0.01):
+def train_crack_captcha_cnn(learn_ratio=0.001):
     # 获得前向传播结果
     y_out = inference()
     # 定义loss(最小误差概率)，选定优化优化loss，
