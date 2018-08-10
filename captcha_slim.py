@@ -4,6 +4,7 @@
 
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
+import nets.nets_factory as nets_factory
 from PIL import Image
 import numpy as np
 import os
@@ -31,17 +32,17 @@ X = tf.placeholder(tf.float32, [None, IMAGE_HEIGHT * IMAGE_WIDTH])
 Y = tf.placeholder(tf.float32, [None, MAX_CAPTCHA * CHAR_SET_LEN])
 # dropout参数，0 ~ 1,表示舍弃节点的概率，为1时不起作用
 keep_prob = tf.placeholder(tf.float32)
-
-
+# 定义输入图片参数
+x_image = tf.reshape(X, shape=[-1, IMAGE_HEIGHT, IMAGE_WIDTH, 1])  # 尺寸：114 * 450
 # ==========================================    2.函数声明    ==========================================
 # 获得测试图像的名称和数据流
 def get_name_and_image():
-    # all_image = os.listdir(TRAIN_PATH)
-    all_image = os.listdir(TEST_PATH)
-    # random_file = random.randint(0, 3429)
-    random_file = random.randint(0, 9)
-    # image_file_path = os.path.join(TRAIN_PATH, all_image[random_file])
-    image_file_path = os.path.join(TEST_PATH, all_image[random_file])
+    all_image = os.listdir(TRAIN_PATH)
+    # all_image = os.listdir(TEST_PATH)
+    random_file = random.randint(0, 3429)
+    # random_file = random.randint(0, 9)
+    image_file_path = os.path.join(TRAIN_PATH, all_image[random_file])
+    # image_file_path = os.path.join(TEST_PATH, all_image[random_file])
     base = os.path.basename(image_file_path)
     name = os.path.splitext(base)[0]
     image = Image.open(image_file_path)
@@ -80,12 +81,15 @@ def get_next_batch(batch_size=64):
 
 
 # ==========================================    3.定义输入输出结构    ==========================================
+def inference_inception_resnet_v2(is_training):
+    logits, end_points = nets_factory.get_network_fn('inception_resnet_v2', MAX_CAPTCHA * CHAR_SET_LEN, is_training=True)
+    return logits
+
 
 def inference():
     ### 第一层卷积操作 ###
     # 将一维图片数据流转换为二维矩阵，第一个参数表示不限订batch数量，最后一个1表示输入层深度
     print('######### 1 ###########')
-    x_image = tf.reshape(X, shape=[-1, IMAGE_HEIGHT, IMAGE_WIDTH, 1])  # 尺寸：114 * 450
     net = slim.conv2d(x_image, 16, [3, 3])  # shape of net is [N,114,450,32]
     net = slim.conv2d(net, 16, [3, 3])  # shape of net is [N,114,450,32]
     net = slim.max_pool2d(net, [2, 2])  # shape of net is [N,57,225,32]
@@ -122,7 +126,8 @@ def inference():
 
 def train_crack_captcha_cnn(learn_ratio=0.001):
     # 获得前向传播结果
-    y_out = inference()
+    # y_out = inference()
+    y_out = inference_inception_resnet_v2(is_training=True)
     # 定义loss(最小误差概率)，选定优化优化loss，
     loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_out, labels=Y))
     optimizer = tf.train.AdamOptimizer(learn_ratio).minimize(loss)  # 调用优化器优化，其实就是通过喂数据争取cross_entropy最小化
@@ -182,5 +187,5 @@ def crack_captcha():
 
 
 if __name__ == '__main__':
-    # train_crack_captcha_cnn()
-    crack_captcha()
+    train_crack_captcha_cnn()
+    # crack_captcha()
