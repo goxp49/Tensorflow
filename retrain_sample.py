@@ -134,7 +134,7 @@ import tensorflow_hub as hub
 
 FLAGS = None
 
-MAX_NUM_IMAGES_PER_CLASS = 2 ** 27 - 1  # ~134M
+MAX_NUM_IMAGES_PER_CLASS = 2 ** 27 - 1  # ~134M, **为指数运算
 
 # The location where variable checkpoints will be stored.
 CHECKPOINT_NAME = '/tmp/_retrain_checkpoint'
