@@ -23,3 +23,6 @@ https://zhuanlan.zhihu.com/zhaoyeyu
 机器学习-浅谈CapsulesNet胶囊网络：
 https://www.jianshu.com/p/cd4b5163929e
 https://blog.csdn.net/uwr44uouqcnsuqb60zk2/article/details/78463687
+
+TensorBoard之6006页面无法访问解决办法：
+https://blog.csdn.net/Noonebirdyou/article/details/80398687
