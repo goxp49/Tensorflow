@@ -26,3 +26,6 @@ https://blog.csdn.net/uwr44uouqcnsuqb60zk2/article/details/78463687
 
 TensorBoard之6006页面无法访问解决办法：
 https://blog.csdn.net/Noonebirdyou/article/details/80398687
+
+简单记录Tensorflow中Graph和Session的关系
+https://blog.csdn.net/xg123321123/article/details/78017997

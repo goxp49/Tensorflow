@@ -1133,6 +1133,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--how_many_training_steps',
       type=int,
+      # default=4000,
       default=4000,
       help='How many training steps to run before ending.'
   )
@@ -1261,8 +1262,8 @@ if __name__ == '__main__':
   parser.add_argument(
       '--saved_model_dir',
       type=str,
-      # default='',
-      default=OUTPUT_PATH,
+      default='',
+      # default=os.path.join(OUTPUT_PATH, 'export_graph'),
       help='Where to save the exported graph.')
   FLAGS, unparsed = parser.parse_known_args()
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
