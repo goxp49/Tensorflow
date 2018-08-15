@@ -19,6 +19,13 @@ https://www.jianshu.com/p/d99b83f4c1a6
 
 5.知乎——GAN相关介绍：
 https://zhuanlan.zhihu.com/zhaoyeyu
+https://www.jianshu.com/p/80bd4d4c2992
+
+DCGAN、WGAN、WGAN-GP、LSGAN、BEGAN原理总结及对比：
+https://blog.csdn.net/qq_25737169/article/details/78857788
+
+BEGAN解读：
+https://blog.csdn.net/qq_25737169/article/details/77575617?locationNum=1&fps=1%EF%BC%89
 
 机器学习-浅谈CapsulesNet胶囊网络：
 https://www.jianshu.com/p/cd4b5163929e
