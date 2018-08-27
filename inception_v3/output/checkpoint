@@ -1,0 +1,2 @@
+model_checkpoint_path: "D:\\python_workspace\\Tensorflow\\inception_v3\\output\\_retrain_checkpoint"
+all_model_checkpoint_paths: "D:\\python_workspace\\Tensorflow\\inception_v3\\output\\_retrain_checkpoint"
