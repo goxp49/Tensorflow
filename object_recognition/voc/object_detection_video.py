@@ -1,36 +1,21 @@
-# coding: utf-8
+"""
+Created on Tue Jan 16 00:52:02 2018
+@author: wang
+通过摄像头实时调用API识别画面内容
+参考：https://blog.csdn.net/ctwy291314/article/details/80452340
+"""
 
-# # Object Detection Demo
-# Welcome to the object detection inference walkthrough!  This notebook will walk you step by step through the process of using a pre-trained model to detect objects in an image. Make sure to follow the [installation instructions](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/installation.md) before you start.
-
-# # Imports
-
-# In[ ]:
-
-
-from distutils.version import StrictVersion
-import numpy as np
 import os
-import six.moves.urllib as urllib
 import sys
-import tarfile
-import tensorflow as tf
-import zipfile
-import pylab, cv2, time
 
-from collections import defaultdict
-from io import StringIO
-from matplotlib import pyplot as plt
-from PIL import Image
+import cv2
+import numpy as np
+import tensorflow as tf
 
 # 将Tensorflow object detect api目录添加到python搜索范围中
 sys.path.append("D:/Anaconda3/Lib/site-packages/tensorflow/models/research/")
-from object_detection.utils import ops as utils_ops
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
-
-if StrictVersion(tf.__version__) < StrictVersion('1.9.0'):
-    raise ImportError('Please upgrade your TensorFlow installation to v1.9.* or later!')
 
 # 设置当前项目路径
 Project_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -44,8 +29,6 @@ PATH_TO_LABELS = os.path.join('current_export_inference_graph',
                               'label_map.pbtxt')
 
 NUM_CLASSES = 90
-
-# ## Load a (frozen) Tensorflow model into memory.
 
 
 detection_graph = tf.Graph()
@@ -66,77 +49,39 @@ categories = label_map_util.convert_label_map_to_categories(label_map, max_num_c
 category_index = label_map_util.create_category_index(categories)
 
 
-def load_image_into_numpy_array(image):
-    (im_width, im_height) = image.size
-    return np.array(image.getdata()).reshape(
-        (im_height, im_width, 3)).astype(np.uint8)
-
-
-def run_inference_for_single_image(image, graph):
-    with graph.as_default():
-        with tf.Session() as sess:
-            # Get handles to input and output tensors
-            ops = tf.get_default_graph().get_operations()
-            all_tensor_names = {output.name for op in ops for output in op.outputs}
-            tensor_dict = {}
-            for key in [
-                'num_detections', 'detection_boxes', 'detection_scores',
-                'detection_classes', 'detection_masks'
-            ]:
-                tensor_name = key + ':0'
-                if tensor_name in all_tensor_names:
-                    tensor_dict[key] = tf.get_default_graph().get_tensor_by_name(
-                        tensor_name)
-            if 'detection_masks' in tensor_dict:
-                # The following processing is only for single image
-                detection_boxes = tf.squeeze(tensor_dict['detection_boxes'], [0])
-                detection_masks = tf.squeeze(tensor_dict['detection_masks'], [0])
-                # Reframe is required to translate mask from box coordinates to image coordinates and fit the image size.
-                real_num_detection = tf.cast(tensor_dict['num_detections'][0], tf.int32)
-                detection_boxes = tf.slice(detection_boxes, [0, 0], [real_num_detection, -1])
-                detection_masks = tf.slice(detection_masks, [0, 0, 0], [real_num_detection, -1, -1])
-                detection_masks_reframed = utils_ops.reframe_box_masks_to_image_masks(
-                    detection_masks, detection_boxes, image.shape[0], image.shape[1])
-                detection_masks_reframed = tf.cast(
-                    tf.greater(detection_masks_reframed, 0.5), tf.uint8)
-                # Follow the convention by adding back the batch dimension
-                tensor_dict['detection_masks'] = tf.expand_dims(
-                    detection_masks_reframed, 0)
-            image_tensor = tf.get_default_graph().get_tensor_by_name('image_tensor:0')
-
-            # Run inference
-            output_dict = sess.run(tensor_dict,
-                                   feed_dict={image_tensor: np.expand_dims(image, 0)})
-
-            # all outputs are float32 numpy arrays, so convert types as appropriate
-            output_dict['num_detections'] = int(output_dict['num_detections'][0])
-            output_dict['detection_classes'] = output_dict[
-                'detection_classes'][0].astype(np.uint8)
-            output_dict['detection_boxes'] = output_dict['detection_boxes'][0]
-            output_dict['detection_scores'] = output_dict['detection_scores'][0]
-            if 'detection_masks' in output_dict:
-                output_dict['detection_masks'] = output_dict['detection_masks'][0]
-    return output_dict
-
-
 def main():
     camera = cv2.VideoCapture(0)
-    old_time = time.time()
-    # 初始化摄像头
-    while True:
-        status, frame = camera.read()
-        new_time = time.time()
-        # 设置获取帧延迟
-        # if new_time - old_time > 0.1:
-        old_time = new_time
-        # Actual detection.
-        output_dict = run_inference_for_single_image(frame, detection_graph)
-        # print(output_dict)
-        cv2.imshow("Video", frame)
+    with detection_graph.as_default():
+        with tf.Session(graph=detection_graph) as sess:
+            while True:
+                ret, image_np = camera.read()
+                # 扩展维度，应为模型期待: [1, None, None, 3]
+                image_np_expanded = np.expand_dims(image_np, axis=0)
+                image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
+                # 每个框代表一个物体被侦测到
+                boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
+                # 每个分值代表侦测到物体的可信度.
+                scores = detection_graph.get_tensor_by_name('detection_scores:0')
+                classes = detection_graph.get_tensor_by_name('detection_classes:0')
+                num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+                # 执行侦测任务.
+                (boxes, scores, classes, num_detections) = sess.run(
+                    [boxes, scores, classes, num_detections],
+                    feed_dict={image_tensor: image_np_expanded})
+                # 检测结果的可视化
+                vis_util.visualize_boxes_and_labels_on_image_array(
+                    image_np,
+                    np.squeeze(boxes),
+                    np.squeeze(classes).astype(np.int32),
+                    np.squeeze(scores),
+                    category_index,
+                    use_normalized_coordinates=True,
+                    line_thickness=4)
 
-        # 判断按键
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+                cv2.imshow('object detection', cv2.resize(image_np, (800, 600)))
+                if cv2.waitKey(25) & 0xFF == ord('q'):
+                    cv2.destroyAllWindows()
+                    break
 
 
 if __name__ == '__main__':
